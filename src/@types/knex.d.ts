@@ -10,5 +10,22 @@ declare module 'knex/types/tables' {
       created_at: string;
       session_id?: string;
     };
+
+    contractsType: {
+      id: string;
+      type: string;
+      session_id?: string;
+      inputs: {
+        options?:
+          | {
+              id: string;
+              label: string;
+            }[]
+          | undefined;
+        type: 'select' | 'text';
+        required: boolean;
+        questionLabel: string;
+      }[];
+    };
   }
 }
