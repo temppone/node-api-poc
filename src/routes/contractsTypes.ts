@@ -5,42 +5,24 @@ import { knex } from '../database';
 import { checkSessionIdExists } from '../middlewares/check-session-id-exists';
 
 export const contractsTypesRoutes = async (app: FastifyInstance) => {
-  app.get('/:type', async (request, reply) => {
-    const getContractTypeParamsSchema = z.object({
-      type: z.string(),
-    });
-
-    let { sessionId } = request.cookies;
-
-    if (!sessionId) {
-      sessionId = randomUUID();
-
-      reply.cookie('sessionId', sessionId, {
-        path: '/',
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      });
-    }
-
-    const { type } = getContractTypeParamsSchema.parse(request.params);
-
-    const formQuestions = await knex('contractsType').where({ type }).first();
-
-    return { formQuestions };
-  });
-
   app.get(
     '/',
     {
       preHandler: [checkSessionIdExists],
     },
-    async (request) => {
-      const { sessionId } = request.cookies;
+    async (request, reply) => {
+      let { sessionId } = request.cookies;
 
-      console.log({ sessionId });
+      if (!sessionId) {
+        sessionId = randomUUID();
 
-      const contractsTypes = await knex('contractsType')
-        .where({ session_id: sessionId })
-        .select('type');
+        reply.cookie('sessionId', sessionId, {
+          path: '/',
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        });
+      }
+
+      const contractsTypes = await knex('contractsType').select();
 
       return { contractsTypes };
     }
