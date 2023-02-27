@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { knex } from '../database';
 import { checkSessionIdExists } from '../middlewares/check-session-id-exists';
 
-export const contractsTypesRoutes = async (app: FastifyInstance) => {
+export const contractsRoutes = async (app: FastifyInstance) => {
   app.get(
     '/',
     {
@@ -51,6 +51,10 @@ export const contractsTypesRoutes = async (app: FastifyInstance) => {
     const { inputs, type } = createContractTypeSchema.parse(request.body);
 
     const existingContractType = await knex('contractsType').where({ type }).first();
+
+    // contractsForms id, type
+    // contractsFormsInputs id, required, type, questionLabel, contractTypeId (required)
+    // contractFormsInputsOptions id, label contractsTypeInputId optional
 
     if (existingContractType) {
       return reply.status(409).send('A contract type already exists');

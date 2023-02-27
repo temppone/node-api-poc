@@ -1,6 +1,6 @@
 import cookie from '@fastify/cookie';
 import fastify from 'fastify';
-import { contractsTypesRoutes } from './routes/contractsTypes';
+import { contractsRoutes } from './routes/contracts';
 import { transactionsRoutes } from './routes/transactions';
 
 export const app = fastify();
@@ -11,6 +11,6 @@ app.register(transactionsRoutes, {
   prefix: 'transactions',
 });
 
-app.register(contractsTypesRoutes, {
+app.register(contractsRoutes, {
   prefix: 'contractsType',
 });
