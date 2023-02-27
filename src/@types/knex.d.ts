@@ -11,7 +11,7 @@ declare module 'knex/types/tables' {
       session_id?: string;
     };
 
-    contractsType: {
+    contractsForms: {
       id: string;
       type: string;
       session_id?: string;
@@ -26,6 +26,14 @@ declare module 'knex/types/tables' {
         required: boolean;
         questionLabel: string;
       }[];
+    };
+
+    contractsFormsInputs: {
+      id: string;
+      required: string;
+      type: string;
+      question_label: string;
+      contract_type_id: string;
     };
   }
 }
