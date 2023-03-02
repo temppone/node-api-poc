@@ -50,22 +50,44 @@ export const contractsRoutes = async (app: FastifyInstance) => {
 
     const { inputs, type } = createContractTypeSchema.parse(request.body);
 
-    const existingContractType = await knex('contractsType').where({ type }).first();
+    const insertedData = await knex.transaction(async (trx) => {
+      const contractTypeId = randomUUID();
 
-    // contractsForms id, type
-    // contractsFormsInputs id, required, type, questionLabel, contractTypeId (required)
-    // contractFormsInputsOptions id, label contractsTypeInputId optional
+      await trx('contractsForms').insert({
+        id: contractTypeId,
+        type,
+      });
 
-    if (existingContractType) {
-      return reply.status(409).send('A contract type already exists');
-    }
+      const inputInserts = inputs.map((input) => ({
+        id: randomUUID(),
+        required: input.required,
+        type: input.type,
+        question_label: input.questionLabel,
+        contract_type_id: contractTypeId,
+      }));
 
-    await knex('contractsType').insert({
-      id: randomUUID(),
-      type,
-      inputs,
+      const insertedInputs = await trx('contractsFormsInputs').insert(inputInserts).returning('*');
+
+      const contractFormsInputsOptionsInserts = insertedInputs.map((input) => ({
+        id: randomUUID(),
+      }));
     });
 
-    return reply.status(201).send();
+    // const existingContractType = await knex('contractsForms').where({ type }).first();
+
+    // // contractsForms id, type
+    // // contractsFormsInputs id, required, type, questionLabel, contractTypeId (required)
+    // // contractFormsInputsOptions id, label contractsTypeInputId optional
+
+    // if (existingContractType) {
+    //   return reply.status(409).send('A contract type already exists');
+    // }
+
+    // await knex('contractsForms').insert({
+    //   id: randomUUID(),
+    //   type,
+    // });
+
+    // return reply.status(201).send();
   });
 };

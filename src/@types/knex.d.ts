@@ -30,7 +30,7 @@ declare module 'knex/types/tables' {
 
     contractsFormsInputs: {
       id: string;
-      required: string;
+      required: boolean;
       type: string;
       question_label: string;
       contract_type_id: string;
