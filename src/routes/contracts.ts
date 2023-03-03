@@ -1,36 +1,42 @@
-import { randomUUID } from 'crypto';
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { knex } from '../database';
-import { checkSessionIdExists } from '../middlewares/check-session-id-exists';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
-  app.get(
-    '/',
-    {
-      preHandler: [checkSessionIdExists],
-    },
-    async (request, reply) => {
-      let { sessionId } = request.cookies;
+  app.get('/types', async () => {
+    const contractsTypes = await knex('contractsForms').select('type');
 
-      if (!sessionId) {
-        sessionId = randomUUID();
+    return { contractsTypes };
+  });
 
-        reply.cookie('sessionId', sessionId, {
-          path: '/',
-          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-        });
-      }
+  app.get('/', async () => {
+    const contractsTypes = await knex('contractsForms').select('*');
 
-      const contractsTypes = await knex('contractsType').select();
+    return { contractsTypes };
+  });
 
-      return { contractsTypes };
+  app.get('/:type', async (request) => {
+    const getContractTypeSchema = z.object({
+      type: z.string(),
+    });
+
+    const { type } = getContractTypeSchema.parse(request.params);
+
+    const contractForm = await knex('contractsForms').where({ type }).first();
+
+    if (contractForm?.inputs) {
+      contractForm.inputs = JSON.parse(contractForm.inputs);
     }
-  );
+
+    return { contractType: contractForm };
+  });
 
   app.post('/', async (request, reply) => {
     const createContractTypeSchema = z.object({
-      type: z.enum(['design', 'development']),
+      type: z.enum(['design', 'development'], {
+        required_error: 'Type is required.',
+      }),
       inputs: z.array(
         z.object({
           required: z.boolean(),
@@ -48,46 +54,55 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       ),
     });
 
-    const { inputs, type } = createContractTypeSchema.parse(request.body);
+    const { type, inputs } = createContractTypeSchema.parse(request.body);
 
-    const insertedData = await knex.transaction(async (trx) => {
-      const contractTypeId = randomUUID();
-
-      await trx('contractsForms').insert({
-        id: contractTypeId,
-        type,
-      });
-
-      const inputInserts = inputs.map((input) => ({
-        id: randomUUID(),
-        required: input.required,
-        type: input.type,
-        question_label: input.questionLabel,
-        contract_type_id: contractTypeId,
-      }));
-
-      const insertedInputs = await trx('contractsFormsInputs').insert(inputInserts).returning('*');
-
-      const contractFormsInputsOptionsInserts = insertedInputs.map((input) => ({
-        id: randomUUID(),
-      }));
+    await knex('contractsForms').insert({
+      id: randomUUID(),
+      type,
+      inputs: JSON.stringify(inputs),
     });
 
-    // const existingContractType = await knex('contractsForms').where({ type }).first();
+    return reply.status(201).send();
+  });
 
-    // // contractsForms id, type
-    // // contractsFormsInputs id, required, type, questionLabel, contractTypeId (required)
-    // // contractFormsInputsOptions id, label contractsTypeInputId optional
+  app.put('/:type', async (request) => {
+    const createContractTypeSchema = z.object({
+      type: z.enum(['design', 'development'], {
+        required_error: 'Type is required.',
+      }),
+      inputs: z.array(
+        z.object({
+          required: z.boolean(),
+          type: z.enum(['select', 'text', 'radio', 'currency']),
+          questionLabel: z.string(),
+          options: z
+            .array(
+              z.object({
+                id: z.string(),
+                label: z.string(),
+              })
+            )
+            .optional(),
+        })
+      ),
+    });
 
-    // if (existingContractType) {
-    //   return reply.status(409).send('A contract type already exists');
-    // }
+    const { type, inputs } = createContractTypeSchema.parse(request.body);
 
-    // await knex('contractsForms').insert({
-    //   id: randomUUID(),
-    //   type,
-    // });
+    await knex('contractsForms')
+      .where({ type })
+      .update({ inputs: JSON.stringify(inputs) });
+  });
 
-    // return reply.status(201).send();
+  app.delete('/:type', async (request) => {
+    const deleteContractTypeSchema = z.object({
+      type: z.string(),
+    });
+
+    const { type } = deleteContractTypeSchema.parse(request.params);
+
+    await knex('contractsForms').where({ type }).delete();
+
+    return { message: 'Contract type deleted.' };
   });
 };

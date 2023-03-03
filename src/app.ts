@@ -12,5 +12,5 @@ app.register(transactionsRoutes, {
 });
 
 app.register(contractsRoutes, {
-  prefix: 'contractsType',
+  prefix: 'contracts',
 });

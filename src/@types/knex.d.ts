@@ -14,26 +14,8 @@ declare module 'knex/types/tables' {
     contractsForms: {
       id: string;
       type: string;
+      inputs: string;
       session_id?: string;
-      inputs: {
-        options?:
-          | {
-              id: string;
-              label: string;
-            }[]
-          | undefined;
-        type: 'select' | 'text';
-        required: boolean;
-        questionLabel: string;
-      }[];
-    };
-
-    contractsFormsInputs: {
-      id: string;
-      required: boolean;
-      type: string;
-      question_label: string;
-      contract_type_id: string;
     };
   }
 }
