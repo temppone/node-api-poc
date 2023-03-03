@@ -14,6 +14,7 @@ declare module 'knex/types/tables' {
     contractsForms: {
       id: string;
       type: string;
+      label: string;
       inputs: string;
       session_id?: string;
     };

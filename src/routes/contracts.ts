@@ -5,7 +5,7 @@ import { knex } from '../database';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
   app.get('/types', async () => {
-    const contractsTypes = await knex('contractsForms').select('type');
+    const contractsTypes = await knex('contractsForms').select('type', 'id', 'label');
 
     return { contractsTypes };
   });
@@ -37,10 +37,18 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       type: z.enum(['design', 'development'], {
         required_error: 'Type is required.',
       }),
+      label: z.string(),
       inputs: z.array(
         z.object({
           required: z.boolean(),
-          type: z.enum(['select', 'text']),
+          type: z.enum([
+            'select',
+            'text',
+            'radio',
+            'currency',
+            'personalProviderData',
+            'personalClientData',
+          ]),
           questionLabel: z.string(),
           options: z
             .array(
@@ -54,11 +62,12 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       ),
     });
 
-    const { type, inputs } = createContractTypeSchema.parse(request.body);
+    const { type, inputs, label } = createContractTypeSchema.parse(request.body);
 
     await knex('contractsForms').insert({
       id: randomUUID(),
       type,
+      label,
       inputs: JSON.stringify(inputs),
     });
 
@@ -70,10 +79,18 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       type: z.enum(['design', 'development'], {
         required_error: 'Type is required.',
       }),
+      label: z.string(),
       inputs: z.array(
         z.object({
           required: z.boolean(),
-          type: z.enum(['select', 'text', 'radio', 'currency']),
+          type: z.enum([
+            'select',
+            'text',
+            'radio',
+            'currency',
+            'personalProviderData',
+            'personalClientData',
+          ]),
           questionLabel: z.string(),
           options: z
             .array(
@@ -87,11 +104,11 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       ),
     });
 
-    const { type, inputs } = createContractTypeSchema.parse(request.body);
+    const { type, inputs, label } = createContractTypeSchema.parse(request.body);
 
     await knex('contractsForms')
       .where({ type })
-      .update({ inputs: JSON.stringify(inputs) });
+      .update({ inputs: JSON.stringify(inputs), label });
   });
 
   app.delete('/:type', async (request) => {
