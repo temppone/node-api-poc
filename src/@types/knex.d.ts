@@ -15,8 +15,16 @@ declare module 'knex/types/tables' {
       id: string;
       type: string;
       label: string;
-      inputs: string;
       session_id?: string;
+    };
+
+    contractsFormsInputs: {
+      id: string;
+      required: boolean;
+      type: string;
+      question_label: string;
+      position: number;
+      contract_type_id: string;
     };
   }
 }
