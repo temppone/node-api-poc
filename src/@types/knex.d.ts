@@ -25,6 +25,7 @@ declare module 'knex/types/tables' {
       question_label: string;
       position: number;
       contract_type_id: string;
+      name: string;
     };
   }
 }

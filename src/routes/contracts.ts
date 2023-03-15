@@ -107,6 +107,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
             'personalProviderData',
             'personalClientData',
           ]),
+          name: z.string(),
           questionLabel: z.string(),
           options: z
             .array(
