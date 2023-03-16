@@ -27,5 +27,12 @@ declare module 'knex/types/tables' {
       contract_type_id: string;
       name: string;
     };
+
+    contractClauses: {
+      id: string;
+      contract_id: string;
+      type: string;
+      text: string;
+    };
   }
 }

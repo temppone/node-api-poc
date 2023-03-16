@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
+import PDFDocument from 'pdfkit';
 import { knex } from '../database';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
@@ -50,6 +51,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
           ]),
           required: z.boolean(),
           questionLabel: z.string(),
+          name: z.string(),
           position: z.number(),
           options: z
             .array(
@@ -81,10 +83,87 @@ export const contractsRoutes = async (app: FastifyInstance) => {
         contract_type_id: contractFormId,
         position: input.position,
         required: input.required,
+        name: input.name,
       });
     });
 
     return reply.status(201).send();
+  });
+
+  app.post('/generate', async (request, reply) => {
+    const generateContractSchema = z.object({
+      type: z.string(),
+      projectDuration: z.string(),
+      projectValue: z.string(),
+      observation: z.string(),
+
+      personalProviderData: z.object({
+        providerCity: z.string(),
+        providerAddressNumber: z.number(),
+        providerComplement: z.string(),
+        providerState: z.string(),
+        providerAddress: z.string(),
+        providerCep: z.string(),
+        providerDocument: z.string(),
+        providerFullName: z.string(),
+      }),
+
+      personalCustomerData: z.object({
+        customerCity: z.string(),
+        customerAddressNumber: z.number(),
+        customerComplement: z.string(),
+        customerState: z.string(),
+        customerAddress: z.string(),
+        customerCep: z.string(),
+        customerDocument: z.string(),
+        customerFullName: z.string(),
+      }),
+    });
+
+    let { sessionId } = request.cookies;
+
+    if (!sessionId) {
+      sessionId = randomUUID();
+
+      reply.cookie('sessionId', sessionId, {
+        path: '/',
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      });
+    }
+
+    const { type } = generateContractSchema.parse(request.body);
+
+    const doc = new PDFDocument();
+
+    console.log(type);
+
+    reply.header('Content-Type', 'application/pdf');
+    reply.header('Content-Disposition', `attachment; filename=Contrato.pdf`);
+
+    doc.pipe(reply.raw);
+
+    doc.info.Title = 'Contrato de prestação de serviço';
+
+    doc.end();
+
+    return reply;
+  });
+
+  app.post('/clause', async (request) => {
+    const contractClauseSchema = z.object({
+      contractId: z.string(),
+      type: z.string(),
+      text: z.string(),
+    });
+
+    const { contractId, type, text } = contractClauseSchema.parse(request.body);
+
+    await knex('contractClauses').insert({
+      id: randomUUID(),
+      contract_id: contractId,
+      type,
+      text,
+    });
   });
 
   app.put('/:type', async (request) => {
