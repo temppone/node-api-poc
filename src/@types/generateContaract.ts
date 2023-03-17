@@ -1,13 +1,13 @@
-export interface IContractBody {
+export interface IContractData {
   type: string;
-  personalProviderData: PersonalProviderData;
-  personalCustomerData: PersonalCustomerData;
+  personalProviderData: IPersonalProviderData;
+  personalCustomerData: IPersonalCustomerData;
   projectDuration: string;
   projectValue: string;
   observation: string;
 }
 
-export interface PersonalProviderData {
+export interface IPersonalProviderData {
   providerCity: string;
   providerAddressNumber: number;
   providerComplement: string;
@@ -18,7 +18,7 @@ export interface PersonalProviderData {
   providerFullName: string;
 }
 
-export interface PersonalCustomerData {
+export interface IPersonalCustomerData {
   customerCity: string;
   customerAddressNumber: number;
   customerState: string;

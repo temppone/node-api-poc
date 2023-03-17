@@ -1,11 +1,11 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import PDFDocument from 'pdfkit';
+import { z } from 'zod';
 import { knex } from '../database';
+import { createContractPDF } from '../utils/pdf';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
-  app.get('/types', async () => {
+  app.get('/form/types', async () => {
     const contractsTypes = await knex('contractsForms').select('type', 'id', 'label');
 
     return { contractsTypes };
@@ -17,7 +17,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     return { contractsTypes };
   });
 
-  app.get('/:type', async (request) => {
+  app.get('/form/:type', async (request) => {
     const getContractTypeSchema = z.object({
       type: z.string(),
     });
@@ -33,7 +33,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     return { contractFormType: { ...contractForm, inputs } };
   });
 
-  app.post('/', async (request, reply) => {
+  app.post('/form', async (request, reply) => {
     const createContractTypeSchema = z.object({
       type: z.enum(['design', 'development'], {
         required_error: 'Type is required.',
@@ -131,20 +131,14 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       });
     }
 
-    const { type } = generateContractSchema.parse(request.body);
+    const requestBody = generateContractSchema.parse(request.body);
 
-    const doc = new PDFDocument();
-
-    console.log(type);
+    const headerData = await knex('contractClauses').where('type', 'header').first();
 
     reply.header('Content-Type', 'application/pdf');
     reply.header('Content-Disposition', `attachment; filename=Contrato.pdf`);
 
-    doc.pipe(reply.raw);
-
-    doc.info.Title = 'Contrato de prestação de serviço';
-
-    doc.end();
+    createContractPDF(reply.raw, requestBody, headerData?.text);
 
     return reply;
   });
@@ -166,7 +160,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     });
   });
 
-  app.put('/:type', async (request) => {
+  app.put('/form/:type', async (request) => {
     const createContractTypeSchema = z.object({
       type: z.enum(['design', 'development'], {
         required_error: 'Type is required.',
@@ -217,7 +211,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     });
   });
 
-  app.delete('/:type', async (request) => {
+  app.delete('/form/:type', async (request) => {
     const deleteContractTypeSchema = z.object({
       type: z.string(),
     });
@@ -233,6 +227,26 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       .del();
 
     await knex('contractsForms').where({ type }).del();
+
+    return { message: 'Contract type deleted.' };
+  });
+
+  app.delete('/clause/:id', async (request) => {
+    const deleteClauseIdSchema = z.object({
+      id: z.string(),
+    });
+
+    const { id } = deleteClauseIdSchema.parse(request.params);
+
+    const clause = await knex('contractClauses').where({ id }).first();
+
+    await knex('contractClauses')
+      .where({
+        id: clause?.id,
+      })
+      .del();
+
+    await knex('contractClauses').where({ id }).del();
 
     return { message: 'Contract type deleted.' };
   });
