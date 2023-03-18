@@ -5,38 +5,60 @@ import {
   IPersonalProviderData,
 } from '../../@types/generateContaract';
 
+export const generateTitle = (doc: PDFKit.PDFDocument) => {
+  doc.fontSize(25).text('Contrato de prestação de serviço', 50, 160);
+};
+
 export const generateHeader = (
   doc: PDFKit.PDFDocument,
   personalCustomerData: IPersonalCustomerData,
   personalProviderData: IPersonalProviderData,
   headerText?: string
 ) => {
-  const { customerFullName, customerCep, customerDocument } = personalCustomerData;
-  const { providerFullName, providerDocument, providerCep } = personalProviderData;
+  const {
+    customerFullName,
+    customerDocument,
+    customerCep,
+    customerAddress,
+    customerAddressNumber,
+    customerComplement,
+    customerCity,
+    customerState,
+  } = personalCustomerData;
+  const {
+    providerFullName,
+    providerDocument,
+    providerCep,
+    providerAddress,
+    providerAddressNumber,
+    providerComplement,
+    providerCity,
+    providerState,
+  } = personalProviderData;
 
   const headerTextValues: { [key: string]: string } = {
-    // customerCity: string;
-    // customerAddressNumber: number;
-    // customerState: string;
-    // customerAddress: string;
-    // customerComplement: string;
     CUSTOMERFULLNAME: customerFullName,
-    CUSTOMERCEP: customerCep,
     CUSTOMERDOCUMENT: customerDocument,
+    CUSTOMERADDRESS: `${customerAddress}, ${customerAddressNumber}, ${
+      customerComplement ?? ''
+    } ${customerCity}, ${customerState}`,
+    CUSTOMERCEP: customerCep,
+
     PROVIDERFULLNAME: providerFullName,
-    PROVIDERCEP: providerCep,
     PROVIDERDOCUMENT: providerDocument,
+    PROVIDERADDRESS: `${providerAddress}, ${providerAddressNumber}, ${
+      providerComplement ? `${providerComplement}, ` : ``
+    }${providerCity}, ${providerState}`,
+    PROVIDERCEP: providerCep,
   };
 
   const newHeaderText = Object.keys(headerTextValues).reduce((actualText: string, key) => {
-    if (actualText.includes(headerTextValues[key])) {
+    if (actualText.includes(key)) {
       return actualText.replace(`{{${key}}}`, headerTextValues[key]);
     }
 
     return actualText;
   }, headerText || '');
-
-  console.log({ newHeaderText });
 
   doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
 };
@@ -50,14 +72,11 @@ export const createContractPDF = (
 
   const doc = new PDFDocument({ margin: 40 });
 
-  console.log({ headerText });
-
   doc.info.Title = 'Contrato de prestação de serviço';
 
+  generateTitle(doc);
   generateHeader(doc, personalCustomerData, personalProviderData, headerText);
 
-  // generateTitle(doc);
-  // generateContent(doc);
   // generateFooter(doc);
 
   doc.pipe(path);
