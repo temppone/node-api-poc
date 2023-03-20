@@ -6,13 +6,19 @@ import { createContractPDF } from '../utils/pdf';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
   app.get('/form/types', async () => {
-    const contractsTypes = await knex('contractsForms').select('type', 'id', 'label');
+    const contractsFormsTypes = await knex('contractsForms').select('type', 'id', 'label');
 
-    return { contractsTypes };
+    return { contractsFormsTypes };
   });
 
   app.get('/', async () => {
     const contractsTypes = await knex('contractsForms').select('*');
+
+    return { contractsTypes };
+  });
+
+  app.get('/contract/types', async () => {
+    const contractsTypes = await knex('contracts').select('*');
 
     return { contractsTypes };
   });
@@ -85,6 +91,25 @@ export const contractsRoutes = async (app: FastifyInstance) => {
         required: input.required,
         name: input.name,
       });
+    });
+
+    return reply.status(201).send();
+  });
+
+  app.post('/contract/type', async (request, reply) => {
+    const createContractTypeSchema = z.object({
+      type: z.string({
+        required_error: 'Type is required.',
+      }),
+    });
+
+    const { type } = createContractTypeSchema.parse(request.body);
+
+    const contractFormId = randomUUID();
+
+    await knex('contracts').insert({
+      id: contractFormId,
+      type,
     });
 
     return reply.status(201).send();
