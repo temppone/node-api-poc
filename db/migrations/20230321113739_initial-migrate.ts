@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('required').notNullable();
     table.string('type').notNullable();
     table.string('question_label').notNullable();
-    table.uuid('contract_type_id').notNullable();
+    table.uuid('contract_type_id');
     table.foreign('contract_type_id').references('id').inTable('contractsForms');
     table.integer('position').notNullable().defaultTo(1);
     table.string('name').notNullable().defaultTo('');
@@ -27,7 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('id').primary();
     table.string('type');
     table.string('text', 9999);
-    table.uuid('contract_id').notNullable().defaultTo('');
+    table.uuid('contract_id');
     table.foreign('contract_id').references('id').inTable('contracts');
   });
 }
