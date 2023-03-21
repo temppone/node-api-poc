@@ -54,7 +54,7 @@ export const generateHeader = (
 
   const newHeaderText = Object.keys(headerTextValues).reduce((actualText: string, key) => {
     if (actualText.includes(key)) {
-      return actualText.replace(`{{${key}}}`, headerTextValues[key]);
+      return actualText.replace(`[${key}]`, headerTextValues[key]);
     }
 
     return actualText;
