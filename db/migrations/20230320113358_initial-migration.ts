@@ -2,13 +2,13 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('contractsForms', (table) => {
-    table.uuid('id').primary();
+    table.string('id').primary();
     table.string('type').unique().notNullable();
     table.string('label').notNullable().defaultTo('');
   });
 
   await knex.schema.createTable('contractsFormsInputs', (table) => {
-    table.uuid('id').primary();
+    table.string('id').primary();
     table.boolean('required').notNullable();
     table.string('type').notNullable();
     table.string('question_label').notNullable();
@@ -19,12 +19,12 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   await knex.schema.createTable('contracts', (table) => {
-    table.uuid('id').primary();
+    table.string('id').primary();
     table.string('type').notNullable().defaultTo('');
   });
 
   await knex.schema.createTable('contractClauses', (table) => {
-    table.uuid('id').primary();
+    table.string('id').primary();
     table.string('type');
     table.string('text', 9999);
     table.string('contract_id').notNullable().defaultTo('');
