@@ -2,32 +2,32 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('contractsForms', (table) => {
-    table.string('id').primary();
+    table.uuid('id').primary();
     table.string('type').unique().notNullable();
     table.string('label').notNullable().defaultTo('');
   });
 
   await knex.schema.createTable('contractsFormsInputs', (table) => {
-    table.string('id').primary();
+    table.uuid('id').primary();
     table.boolean('required').notNullable();
     table.string('type').notNullable();
     table.string('question_label').notNullable();
-    table.string('contract_type_id').notNullable();
+    table.uuid('contract_type_id').notNullable();
     table.foreign('contract_type_id').references('id').inTable('contractsForms');
     table.integer('position').notNullable().defaultTo(1);
     table.string('name').notNullable().defaultTo('');
   });
 
   await knex.schema.createTable('contracts', (table) => {
-    table.string('id').primary();
+    table.uuid('id').primary();
     table.string('type').notNullable().defaultTo('');
   });
 
   await knex.schema.createTable('contractClauses', (table) => {
-    table.string('id').primary();
+    table.uuid('id').primary();
     table.string('type');
     table.string('text', 9999);
-    table.string('contract_id').notNullable().defaultTo('');
+    table.uuid('contract_id').notNullable().defaultTo('');
     table.foreign('contract_id').references('id').inTable('contracts');
   });
 }
