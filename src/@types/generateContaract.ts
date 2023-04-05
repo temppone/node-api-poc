@@ -4,13 +4,13 @@ export interface IContractData {
   personalCustomerData: IPersonalCustomerData;
   projectDuration: string;
   projectValue: string;
-  observation: string;
+  observation?: string;
 }
 
 export interface IPersonalProviderData {
   providerCity: string;
   providerAddressNumber: number;
-  providerComplement: string;
+  providerComplement?: string;
   providerState: string;
   providerAddress: string;
   providerCep: string;
@@ -26,5 +26,5 @@ export interface IPersonalCustomerData {
   customerCep: string;
   customerDocument: string;
   customerFullName: string;
-  customerComplement: string;
+  customerComplement?: string;
 }

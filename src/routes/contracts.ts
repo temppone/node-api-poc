@@ -51,6 +51,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
             'select',
             'text',
             'radio',
+            'date',
             'currency',
             'personalProviderData',
             'personalClientData',
@@ -120,12 +121,12 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       type: z.string(),
       projectDuration: z.string(),
       projectValue: z.string(),
-      observation: z.string(),
+      observation: z.string().optional(),
 
       personalProviderData: z.object({
         providerCity: z.string(),
         providerAddressNumber: z.number(),
-        providerComplement: z.string(),
+        providerComplement: z.string().optional(),
         providerState: z.string(),
         providerAddress: z.string(),
         providerCep: z.string(),
@@ -136,7 +137,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       personalCustomerData: z.object({
         customerCity: z.string(),
         customerAddressNumber: z.number(),
-        customerComplement: z.string(),
+        customerComplement: z.string().optional(),
         customerState: z.string(),
         customerAddress: z.string(),
         customerCep: z.string(),
@@ -145,27 +146,20 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       }),
     });
 
-    let { sessionId } = request.cookies;
+    try {
+      const requestBody = generateContractSchema.parse(request.body);
 
-    if (!sessionId) {
-      sessionId = randomUUID();
+      const headerData = await knex('contractClauses').where('type', requestBody.type).first();
+      const buffer = await createContractPDF(reply, requestBody, headerData?.text);
 
-      reply.cookie('sessionId', sessionId, {
-        path: '/',
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      });
+      reply
+        .header('Content-Disposition', `attachment; filename=Contrato.pdf`)
+        .type('application/pdf')
+        .code(200)
+        .send(buffer);
+    } catch (err) {
+      console.log(err);
     }
-
-    const requestBody = generateContractSchema.parse(request.body);
-
-    const headerData = await knex('contractClauses').where('type', 'header').first();
-
-    reply.header('Content-Type', 'application/pdf');
-    reply.header('Content-Disposition', `attachment; filename=Contrato.pdf`);
-
-    createContractPDF(reply.raw, requestBody, headerData?.text);
-
-    return reply;
   });
 
   app.post('/clause', async (request) => {
