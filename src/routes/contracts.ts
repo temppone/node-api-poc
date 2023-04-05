@@ -122,6 +122,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       projectDuration: z.string(),
       projectValue: z.string(),
       observation: z.string().optional(),
+      contract_id: z.string(),
 
       personalProviderData: z.object({
         providerCity: z.string(),
@@ -149,8 +150,20 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     try {
       const requestBody = generateContractSchema.parse(request.body);
 
-      const headerData = await knex('contractClauses').where('type', requestBody.type).first();
-      const buffer = await createContractPDF(reply, requestBody, headerData?.text);
+      const headerData = await knex('contractClauses')
+        .where({ contract_id: requestBody.contract_id, type: 'header' })
+        .first();
+
+      const contentData = await knex('contractClauses')
+        .where({ contract_id: requestBody.contract_id, type: 'content' })
+        .first();
+
+      const buffer = await createContractPDF(
+        reply,
+        requestBody,
+        headerData?.text,
+        contentData?.text
+      );
 
       reply
         .header('Content-Disposition', `attachment; filename=Contrato.pdf`)

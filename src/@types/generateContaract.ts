@@ -5,6 +5,7 @@ export interface IContractData {
   projectDuration: string;
   projectValue: string;
   observation?: string;
+  contract_id: string;
 }
 
 export interface IPersonalProviderData {

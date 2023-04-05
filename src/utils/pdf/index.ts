@@ -6,15 +6,17 @@ import { IContractData } from '../../@types/generateContaract';
 export const createContractPDF = async (
   response: FastifyReply,
   contractRequestData: IContractData,
-  headerText?: string
+  headerText?: string,
+  contentText?: string
 ) => {
-  const { personalCustomerData, personalProviderData } = contractRequestData;
+  const { personalCustomerData, personalProviderData, projectDuration, projectValue, observation } =
+    contractRequestData;
 
   const doc = new PDFDocument({ margin: 40 });
 
   doc.info.Title = 'Contrato de prestação de serviço';
 
-  doc.fillColor('black').fontSize(25).text('Contrato de prestação de serviço', 50, 160);
+  doc.fillColor('black').fontSize(25).text('Contrato de prestação de serviço', 50, 10);
 
   const {
     customerFullName,
@@ -26,6 +28,7 @@ export const createContractPDF = async (
     customerCity,
     customerState,
   } = personalCustomerData;
+
   const {
     providerFullName,
     providerDocument,
@@ -37,7 +40,7 @@ export const createContractPDF = async (
     providerState,
   } = personalProviderData;
 
-  const headerTextValues: { [key: string]: string } = {
+  const textValues: { [key: string]: string } = {
     CUSTOMERFULLNAME: customerFullName,
     CUSTOMERDOCUMENT: customerDocument,
     CUSTOMERADDRESS: `${customerAddress}, ${customerAddressNumber}, ${
@@ -51,19 +54,31 @@ export const createContractPDF = async (
       providerComplement ? `${providerComplement}, ` : ``
     }${providerCity}, ${providerState}`,
     PROVIDERCEP: providerCep,
+    PROJECTVALUE: projectValue,
+    PROJECTDURATION: projectDuration,
+    OBSERVATION: observation || '',
+    PROVIDERCITY: providerCity,
+    PROVIDERSTATE: providerState,
   };
 
-  const newHeaderText = Object.keys(headerTextValues).reduce((actualText: string, key) => {
+  const newHeaderText = Object.keys(textValues).reduce((actualText: string, key) => {
     if (actualText.includes(key)) {
-      return actualText.replace(`[${key}]`, headerTextValues[key]);
+      return actualText.replace(`[${key}]`, textValues[key]);
     }
 
     return actualText;
   }, headerText || '');
 
-  doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
+  const newContentText = Object.keys(textValues).reduce((actualText: string, key) => {
+    if (actualText.includes(key)) {
+      return actualText.replace(`[${key}]`, textValues[key]);
+    }
 
-  // generateFooter(doc);
+    return actualText;
+  }, contentText || '');
+
+  doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
+  doc.fontSize(10).text(newContentText || '', 50, 130, { align: 'justify', width: 500 });
 
   const buffer = await new Promise((resolve, reject) => {
     const chunks: any[] = [];
