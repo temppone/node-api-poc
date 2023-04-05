@@ -1,20 +1,21 @@
+import { FastifyReply } from 'fastify';
 import PDFDocument from 'pdfkit';
-import {
-  IContractData,
-  IPersonalCustomerData,
-  IPersonalProviderData,
-} from '../../@types/generateContaract';
+import { Writable } from 'stream';
+import { IContractData } from '../../@types/generateContaract';
 
-export const generateTitle = (doc: PDFKit.PDFDocument) => {
-  doc.fontSize(25).text('Contrato de prestação de serviço', 50, 160);
-};
-
-export const generateHeader = (
-  doc: PDFKit.PDFDocument,
-  personalCustomerData: IPersonalCustomerData,
-  personalProviderData: IPersonalProviderData,
+export const createContractPDF = async (
+  response: FastifyReply,
+  contractRequestData: IContractData,
   headerText?: string
 ) => {
+  const { personalCustomerData, personalProviderData } = contractRequestData;
+
+  const doc = new PDFDocument({ margin: 40 });
+
+  doc.info.Title = 'Contrato de prestação de serviço';
+
+  doc.fillColor('black').fontSize(25).text('Contrato de prestação de serviço', 50, 160);
+
   const {
     customerFullName,
     customerDocument,
@@ -61,27 +62,25 @@ export const generateHeader = (
   }, headerText || '');
 
   doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
-};
-
-export const createContractPDF = (
-  path: any,
-  contractRequestData: IContractData,
-  headerText?: string
-) => {
-  const { personalCustomerData, personalProviderData } = contractRequestData;
-
-  const doc = new PDFDocument({ margin: 40 });
-
-  doc.info.Title = 'Contrato de prestação de serviço';
-
-  generateTitle(doc);
-  generateHeader(doc, personalCustomerData, personalProviderData, headerText);
 
   // generateFooter(doc);
 
-  doc.pipe(path);
+  const buffer = await new Promise((resolve, reject) => {
+    const chunks: any[] = [];
 
-  doc.end();
+    const stream = new Writable({
+      write: (chunk, _, next) => {
+        chunks.push(chunk);
+        next();
+      },
+    });
 
-  return doc;
+    stream.once('error', (err) => reject(err));
+    stream.once('close', () => resolve(Buffer.concat(chunks)));
+
+    doc.pipe(stream);
+    doc.end();
+  });
+
+  return buffer;
 };
