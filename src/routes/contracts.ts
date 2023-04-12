@@ -6,13 +6,19 @@ import { createContractPDF } from '../utils/pdf';
 
 export const contractsRoutes = async (app: FastifyInstance) => {
   app.get('/form/types', async () => {
-    const contractsTypes = await knex('contractsForms').select('type', 'id', 'label');
+    const contractsFormsTypes = await knex('contractsForms').select('type', 'id', 'label');
 
-    return { contractsTypes };
+    return { contractsFormsTypes };
   });
 
   app.get('/', async () => {
     const contractsTypes = await knex('contractsForms').select('*');
+
+    return { contractsTypes };
+  });
+
+  app.get('/contract/types', async () => {
+    const contractsTypes = await knex('contracts').select('*');
 
     return { contractsTypes };
   });
@@ -45,6 +51,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
             'select',
             'text',
             'radio',
+            'date',
             'currency',
             'personalProviderData',
             'personalClientData',
@@ -90,17 +97,37 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     return reply.status(201).send();
   });
 
+  app.post('/contract/type', async (request, reply) => {
+    const createContractTypeSchema = z.object({
+      type: z.string({
+        required_error: 'Type is required.',
+      }),
+    });
+
+    const { type } = createContractTypeSchema.parse(request.body);
+
+    const contractFormId = randomUUID();
+
+    await knex('contracts').insert({
+      id: contractFormId,
+      type,
+    });
+
+    return reply.status(201).send();
+  });
+
   app.post('/generate', async (request, reply) => {
     const generateContractSchema = z.object({
       type: z.string(),
       projectDuration: z.string(),
       projectValue: z.string(),
-      observation: z.string(),
+      observation: z.string().optional(),
+      contract_id: z.string(),
 
       personalProviderData: z.object({
         providerCity: z.string(),
         providerAddressNumber: z.number(),
-        providerComplement: z.string(),
+        providerComplement: z.string().optional(),
         providerState: z.string(),
         providerAddress: z.string(),
         providerCep: z.string(),
@@ -111,7 +138,7 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       personalCustomerData: z.object({
         customerCity: z.string(),
         customerAddressNumber: z.number(),
-        customerComplement: z.string(),
+        customerComplement: z.string().optional(),
         customerState: z.string(),
         customerAddress: z.string(),
         customerCep: z.string(),
@@ -120,27 +147,32 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       }),
     });
 
-    let { sessionId } = request.cookies;
+    try {
+      const requestBody = generateContractSchema.parse(request.body);
 
-    if (!sessionId) {
-      sessionId = randomUUID();
+      const headerData = await knex('contractClauses')
+        .where({ contract_id: requestBody.contract_id, type: 'header' })
+        .first();
 
-      reply.cookie('sessionId', sessionId, {
-        path: '/',
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      });
+      const contentData = await knex('contractClauses')
+        .where({ contract_id: requestBody.contract_id, type: 'content' })
+        .first();
+
+      const buffer = await createContractPDF(
+        reply,
+        requestBody,
+        headerData?.text,
+        contentData?.text
+      );
+
+      reply
+        .header('Content-Disposition', `attachment; filename=Contrato.pdf`)
+        .type('application/pdf')
+        .code(200)
+        .send(buffer);
+    } catch (err) {
+      console.log(err);
     }
-
-    const requestBody = generateContractSchema.parse(request.body);
-
-    const headerData = await knex('contractClauses').where('type', 'header').first();
-
-    reply.header('Content-Type', 'application/pdf');
-    reply.header('Content-Disposition', `attachment; filename=Contrato.pdf`);
-
-    createContractPDF(reply.raw, requestBody, headerData?.text);
-
-    return reply;
   });
 
   app.post('/clause', async (request) => {
