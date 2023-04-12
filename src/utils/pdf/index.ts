@@ -84,6 +84,12 @@ export const createContractPDF = async (
   doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
   doc.fontSize(10).text(newContentText || '', 50, 130, { align: 'justify', width: 500 });
 
+  doc.moveTo(50, 690).lineTo(550, 690).lineWidth(1).stroke();
+  doc.fontSize(10).text('CONTRATADO', 50, 695, { align: 'center', width: 500 });
+
+  doc.moveTo(50, 730).lineTo(550, 730).lineWidth(1).stroke();
+  doc.fontSize(10).text('CONTRATANTE' || '', 50, 735, { align: 'center', width: 500 });
+
   const buffer = await new Promise((resolve, reject) => {
     const chunks: any[] = [];
 
