@@ -12,11 +12,15 @@ export const createContractPDF = async (
   const { personalCustomerData, personalProviderData, projectDuration, projectValue, observation } =
     contractRequestData;
 
+  const numberAndDotRegex = /(\d+\. )/g;
+
   const doc = new PDFDocument({ margin: 40 });
 
   doc.info.Title = 'Contrato de prestação de serviço';
 
-  doc.fillColor('black').fontSize(25).text('Contrato de prestação de serviço', 50, 10);
+  doc.fillColor('black').fontSize(18).text('Contrato de prestação de serviço', 0, 20, {
+    align: 'center',
+  });
 
   const {
     customerFullName,
@@ -71,7 +75,7 @@ export const createContractPDF = async (
 
   const newContentText = Object.keys(textValues).reduce((actualText: string, key) => {
     if (actualText.includes(key)) {
-      return actualText.replace(`[${key}]`, textValues[key]);
+      return actualText.replace(`[${key}]`, textValues[key]).replace(numberAndDotRegex, '\n$&');
     }
 
     return actualText;
