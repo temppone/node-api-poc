@@ -1,20 +1,27 @@
+import { FastifyReply } from 'fastify';
 import PDFDocument from 'pdfkit';
-import {
-  IContractData,
-  IPersonalCustomerData,
-  IPersonalProviderData,
-} from '../../@types/generateContaract';
+import { Writable } from 'stream';
+import { IContractData } from '../../@types/generateContaract';
 
-export const generateTitle = (doc: PDFKit.PDFDocument) => {
-  doc.fontSize(25).text('Contrato de prestação de serviço', 50, 160);
-};
-
-export const generateHeader = (
-  doc: PDFKit.PDFDocument,
-  personalCustomerData: IPersonalCustomerData,
-  personalProviderData: IPersonalProviderData,
-  headerText?: string
+export const createContractPDF = async (
+  response: FastifyReply,
+  contractRequestData: IContractData,
+  headerText?: string,
+  contentText?: string
 ) => {
+  const { personalCustomerData, personalProviderData, projectDuration, projectValue, observation } =
+    contractRequestData;
+
+  const numberAndDotRegex = /(\d+\. )/g;
+
+  const doc = new PDFDocument({ margin: 40 });
+
+  doc.info.Title = 'Contrato de prestação de serviço';
+
+  doc.fillColor('black').fontSize(18).text('Contrato de prestação de serviço', 0, 20, {
+    align: 'center',
+  });
+
   const {
     customerFullName,
     customerDocument,
@@ -25,6 +32,7 @@ export const generateHeader = (
     customerCity,
     customerState,
   } = personalCustomerData;
+
   const {
     providerFullName,
     providerDocument,
@@ -36,7 +44,7 @@ export const generateHeader = (
     providerState,
   } = personalProviderData;
 
-  const headerTextValues: { [key: string]: string } = {
+  const textValues: { [key: string]: string } = {
     CUSTOMERFULLNAME: customerFullName,
     CUSTOMERDOCUMENT: customerDocument,
     CUSTOMERADDRESS: `${customerAddress}, ${customerAddressNumber}, ${
@@ -50,38 +58,54 @@ export const generateHeader = (
       providerComplement ? `${providerComplement}, ` : ``
     }${providerCity}, ${providerState}`,
     PROVIDERCEP: providerCep,
+    PROJECTVALUE: projectValue,
+    PROJECTDURATION: projectDuration,
+    OBSERVATION: observation || '',
+    PROVIDERCITY: providerCity,
+    PROVIDERSTATE: providerState,
   };
 
-  const newHeaderText = Object.keys(headerTextValues).reduce((actualText: string, key) => {
+  const newHeaderText = Object.keys(textValues).reduce((actualText: string, key) => {
     if (actualText.includes(key)) {
-      return actualText.replace(`[${key}]`, headerTextValues[key]);
+      return actualText.replace(`[${key}]`, textValues[key]);
     }
 
     return actualText;
   }, headerText || '');
 
+  const newContentText = Object.keys(textValues).reduce((actualText: string, key) => {
+    if (actualText.includes(key)) {
+      return actualText.replace(`[${key}]`, textValues[key]).replace(numberAndDotRegex, '\n$&');
+    }
+
+    return actualText;
+  }, contentText || '');
+
   doc.fontSize(10).text(newHeaderText || '', 50, 50, { align: 'justify', width: 500 });
-};
+  doc.fontSize(10).text(newContentText || '', 50, 130, { align: 'justify', width: 500 });
 
-export const createContractPDF = (
-  path: any,
-  contractRequestData: IContractData,
-  headerText?: string
-) => {
-  const { personalCustomerData, personalProviderData } = contractRequestData;
+  doc.moveTo(50, 690).lineTo(550, 690).lineWidth(1).stroke();
+  doc.fontSize(10).text('CONTRATADO', 50, 695, { align: 'center', width: 500 });
 
-  const doc = new PDFDocument({ margin: 40 });
+  doc.moveTo(50, 730).lineTo(550, 730).lineWidth(1).stroke();
+  doc.fontSize(10).text('CONTRATANTE' || '', 50, 735, { align: 'center', width: 500 });
 
-  doc.info.Title = 'Contrato de prestação de serviço';
+  const buffer = await new Promise((resolve, reject) => {
+    const chunks: any[] = [];
 
-  generateTitle(doc);
-  generateHeader(doc, personalCustomerData, personalProviderData, headerText);
+    const stream = new Writable({
+      write: (chunk, _, next) => {
+        chunks.push(chunk);
+        next();
+      },
+    });
 
-  // generateFooter(doc);
+    stream.once('error', (err) => reject(err));
+    stream.once('close', () => resolve(Buffer.concat(chunks)));
 
-  doc.pipe(path);
+    doc.pipe(stream);
+    doc.end();
+  });
 
-  doc.end();
-
-  return doc;
+  return buffer;
 };
