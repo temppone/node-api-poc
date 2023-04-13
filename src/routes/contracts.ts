@@ -256,6 +256,26 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     return { message: 'Contract type deleted.' };
   });
 
+  app.delete('/contract/:id', async (request) => {
+    const deleteContractSchema = z.object({
+      id: z.string(),
+    });
+
+    const { id } = deleteContractSchema.parse(request.params);
+
+    const clause = await knex('contracts').where({ id }).first();
+
+    await knex('contracts')
+      .where({
+        id: clause?.id,
+      })
+      .del();
+
+    await knex('contracts').where({ id }).del();
+
+    return { message: 'Contract type deleted.' };
+  });
+
   app.delete('/clause/:id', async (request) => {
     const deleteClauseIdSchema = z.object({
       id: z.string(),
