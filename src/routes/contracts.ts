@@ -11,6 +11,12 @@ export const contractsRoutes = async (app: FastifyInstance) => {
     return { contractsFormsTypes };
   });
 
+  app.get('/contract/clauses', async () => {
+    const contractClauses = await knex('contractClauses').select('type', 'id', 'text');
+
+    return { contractClauses };
+  });
+
   app.get('/', async () => {
     const contractsTypes = await knex('contractsForms').select('*');
 
@@ -270,11 +276,11 @@ export const contractsRoutes = async (app: FastifyInstance) => {
 
     const { id } = deleteContractSchema.parse(request.params);
 
-    const clause = await knex('contracts').where({ id }).first();
+    const contract = await knex('contracts').where({ id }).first();
 
     await knex('contracts')
       .where({
-        id: clause?.id,
+        id: contract?.id,
       })
       .del();
 
