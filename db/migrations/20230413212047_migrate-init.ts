@@ -28,7 +28,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('type');
     table.string('text', 9999);
     table.uuid('contract_id');
-    table.foreign('contract_id').references('id').inTable('contracts');
+    table.foreign('contract_id').references('id').inTable('contractsForms');
   });
 }
 

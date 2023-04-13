@@ -12,7 +12,12 @@ export const contractsRoutes = async (app: FastifyInstance) => {
   });
 
   app.get('/contract/clauses', async () => {
-    const contractClauses = await knex('contractClauses').select('type', 'id', 'text');
+    const contractClauses = await knex('contractClauses').select(
+      'type',
+      'id',
+      'text',
+      'contract_id'
+    );
 
     return { contractClauses };
   });
@@ -153,6 +158,8 @@ export const contractsRoutes = async (app: FastifyInstance) => {
       }),
     });
 
+    // Pelo presente instrumento particular, de um lado [customerFullName], [customerDocument], residente e domiciliado(a) na [customerAddress], CEP [customerCep], doravante denominado simplesmente 'Contratante', e de outro lado [providerFullName], [providerDocument], residente e domiciliado(a) na [providerAddress], CEP [providerCep], doravante denominado simplesmente 'Contratado', têm entre si justo e contratado o seguinte:
+    // 1. Objeto do contrato: O presente contrato tem por objeto a prestação de serviços de design gráfico pelo Contratado, conforme descrito no documento 'Briefing' elaborado pelo Contratante e que faz parte integrante deste instrumento.2. Prazo: O prazo de duração do projeto será de [PROJECTDURATION], a contar da data de assinatura deste contrato pelas partes. 3. Remuneração: Pela prestação dos serviços objeto deste contrato, o Contratante pagará ao Contratado o valor total de R$ [PROJECTVALUE].4. Obrigações do Contratado: O Contratado se compromete a desenvolver os serviços objeto deste contrato com zelo, dedicação e profissionalismo, obedecendo ao prazo estipulado e ao briefing elaborado pelo Contratante. 5. Obrigações do Contratante: O Contratante se compromete a fornecer todas as informações e materiais necessários para a realização dos serviços objeto deste contrato, bem como a pagar a remuneração devida nas condições estipuladas. 6. Propriedade intelectual: Todos os direitos de propriedade intelectual relativos aos serviços prestados pelo Contratado serão de propriedade exclusiva do Contratante. 7. Rescisão: O presente contrato poderá ser rescindido por qualquer das partes, a qualquer momento, mediante notificação por escrito, com antecedência mínima de 15 dias. 8. Foro: Fica eleito o foro da Comarca de [PROVIDERCITY] - [PROVIDERSTATE], para dirimir quaisquer dúvidas ou controvérsias oriundas deste contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.
     try {
       const requestBody = generateContractSchema.parse(request.body);
 
