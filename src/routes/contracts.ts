@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
